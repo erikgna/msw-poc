@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# MSW Demo Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This demo showcases Mock Service Worker (MSW) for network mocking in both browser and testing environments.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Interactive UI to compare Axios vs Fetch API
+- MSW intercepts network requests at runtime
+- Tests demonstrate module mocking vs MSW network simulation
+- Same mock handlers work for both browser and Node.js
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Run Demo
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+Open the browser and test the application. Notice that:
+- MSW service worker is registered (check console)
+- Both Axios and Fetch use the same mock handlers
+- No real network requests are made
+
+## Run Tests
+
+```bash
+npm test
+```
+
+Tests include:
+- `userService.old.test.ts` - Traditional module mocking approach
+- `userService.test.ts` - MSW network simulation (works with both axios and fetch)
+- `App.test.tsx` - Component testing with MSW
+
+## Key Files
+
+- `src/mocks/handlers.ts` - Define mock API responses
+- `src/mocks/browser.ts` - MSW setup for browser
+- `src/mocks/server.ts` - MSW setup for Node.js tests
+- `src/setupTests.ts` - Test configuration
+- `src/userService.ts` - API client with axios and fetch implementations
+
+## Why MSW?
+
+Traditional mocking couples tests to implementation:
+- Change axios to fetch → tests break
+- Mock library internals, not network
+
+MSW treats your app as a black box:
+- Change any HTTP library → tests still pass
+- Mock at network level, test contracts not implementations

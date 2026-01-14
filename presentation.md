@@ -1,137 +1,67 @@
-# Mock Service Worker (MSW) - 5 Minute Presentation
+## The Mocking Problem
 
-## Slide 1: Title + Hook (30 seconds)
+Slide: What is a Mock and Why Does it Hurt?
 
-### Visual: MSW logo on dark background
+In testing, a Mock is a replacement for a real dependency (like an API or a Database) used to verify behavior.
 
-Today I'm showing you Mock Service Worker - a library that intercepts network requests at the **network level**.
+- **Stubs:** Are hardcoded objects. They are fast but require manual updates every time the data shape changes.
 
----
+- **Module Mocks**: Using jest.mock() to hijack alibrary like Axios. It’s better, but it creates Implementation Coupling. If you swap Axios for Fetch, your test breaks even if the logic is correct.
 
-## Slide 2: THE PROBLEM (40 seconds)
+- **Network Simulation**: With Mocking Service Worker we don't mock the code, we simulate the network.
 
-### Visual: Code snippet showing traditional mocking pain points
+The Difference is that on traditional mocking alters the internals of our app. MSW treats our app as a Black Box, intercepting communication at the lowest possible level.
 
-```typescript
-// Traditional mocking - tightly coupled to implementation
-jest.mock("axios");
-axios.get.mockResolvedValue({ data: { id: 1, name: "John" } });
+## Browser Engine: Service Workers & Fetch API
 
-// ⚠️ Problems:
-// - Mocks the library, not the network
-// - Different code path than production
-// - Breaks when you change HTTP client
-```
+Slide: The Proxy in your Browser
 
-"Traditional API mocking has serious problems:
+- **Service Worker API**: A Service Worker is a script that runs in a background thread, separate from our tabs. It acts as a Network Proxy.
+- **How it works**: MSW registers a Service Worker that listens for the fetch event. When our app makes a request, the browser sends it to the Service Worker first.
+- **The Fetch API:** MSW uses standard Request and Response objects. So it’s not "faking" a response; it’s providing a real cryptographic-standard response that the browser processes as if it came from a remote server.
 
-- **Implementation Coupling**: Tied to your HTTP client (axios, fetch)
-- **Inconsistent Behavior**: Tests use mocks, production uses real APIs
-- **Can't Use in Development**: Traditional mocks only work in tests
+The benefit is that "mock" code never enters our application bundle.
 
-MSW solves this by intercepting at the **network level**."
+## Node Engine: Monkey Patching & Interceptors
 
----
+Slide: Intercepting Sockets in Node.js
 
-## Slide 3: WHAT IS MSW? (50 seconds)
+- In Node.js we don't have Service Workers so the solution from MSW is using @mswjs/interceptors to perform Monkey Patching. It temporarily replaces the native methods of Node's http, https, and XMLHttpRequest modules at runtime.
 
-### Visual: Diagram showing network interception
+- When we use Axios, Superagent, or Got, they eventually call the native http.request. Since MSW has "patched" that native function, it can divert the call to our mock handlers. And this is why MSW works across any library. It’s not mocking the library; it’s mocking the Node.js runtime environment.
 
-```typescript
-// MSW - Intercepts at the network level
-import { http, HttpResponse } from "msw";
+## Live Code
 
-export const handlers = [
-  http.get("/api/users/:id", ({ params }) => {
-    return HttpResponse.json({
-      id: params.id,
-      name: "John Doe",
-    });
-  }),
-];
+Step 1: The "Before" (Module Mocking)
 
-// ✅ Works with ANY HTTP client
-// ✅ Same code for tests AND development
-// ✅ Simulates real network behavior
-```
+JavaScript
+// user.test.js
+import axios from 'axios';
+vi.mock('axios'); // We are lying to the compiler
 
-"MSW uses **Service Workers** (browser) or **Node.js interceptors** (tests) to catch requests **before they leave your app**.
+test('gets user', async () => {
+axios.get.mockResolvedValue({ data: { name: 'John' } });
+// If I change axios to fetch, this test dies.
+});
+Step 2: The "After" (MSW Simulation)
 
-**Key Benefit**: Your app code doesn't know it's mocked. Same handlers work everywhere."
+JavaScript
 
----
+// mocks/handlers.js
+http.get('/user', () => {
+return HttpResponse.json({ name: 'John' })
+})
 
-## Slide 4: LIVE DEMO (90 seconds)
+// user.test.js
+test('gets user', async () => {
+const user = await getUser();
+expect(user.name).toBe('John');
+// I can use axios, fetch, or ky. The test doesn't care.
+});
+Action: Run the test. Change the internal implementation from axios to fetch. Run it again. It still passes.
 
-### Visual: Live code showing setup
+## Trade-offs and Finishing
+   Slide: Pros and Cons
 
-"Quick setup in 3 steps:
-
-**Step 1**: Define handlers (shared everywhere)
-
-```typescript
-// handlers.ts
-export const handlers = [
-  http.get("/api/users/:id", ({ params }) => {
-    return HttpResponse.json({ id: params.id, name: "Mock User" });
-  }),
-];
-```
-
-**Step 2**: Browser setup (development)
-
-```typescript
-import { setupWorker } from "msw/browser";
-import { handlers } from "./handlers";
-
-setupWorker(...handlers).start();
-```
-
-**Step 3**: Test setup
-
-```typescript
-import { setupServer } from "msw/node";
-import { handlers } from "./handlers";
-
-const server = setupServer(...handlers);
-beforeAll(() => server.listen());
-afterAll(() => server.close());
-```
-
-**Same handlers, different environments!**"
-
----
-
-## Slide 5: COMPARISONS & WHEN TO USE (60 seconds)
-
-### Visual: Comparison table + decision guide
-
-| Feature                  | MSW    | jest.mock()  | Mirage JS |
-| ------------------------ | ------ | ------------ | --------- |
-| **Network Level**        | ✅     | ❌           | ✅        |
-| **Works in Browser**     | ✅     | ❌           | ✅        |
-| **HTTP Client Agnostic** | ✅     | ❌           | ✅        |
-| **Dev + Test**           | ✅     | ❌ Test only | ✅        |
-| **Setup Complexity**     | Medium | Easy         | Medium    |
-
-**vs jest.mock()**: MSW mocks network, not code. No coupling.
-**vs Mirage JS**: MSW is lighter, Mirage has ORM features.
-
-**Use MSW when:**
-
-- Building frontend apps consuming APIs
-- Backend isn't ready yet
-- Need consistent dev/test experience
-
-**Skip for:**
-
-- Pure backend services
-- Very simple apps with 1-2 API calls
-
----
-
-## Slide 6: CONCLUSION (30 seconds)
-
-### Visual: MSW logo + quick start
-
-"MSW = Network-level mocking. Mock once, use everywhere.
+- **Trade-off:** MSW has a slightly higher initial setup compared to a simple jest.fn(), but it pays off in maintenance.
+- **Why to use:** We gain the ability to refactor our entire data-fetching layer without touching our tests. We are testing contracts, not implementations.
