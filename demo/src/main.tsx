@@ -4,14 +4,18 @@ import './index.css'
 import App from './App.tsx'
 import { worker } from './mocks/browser'
 
-if (import.meta.env.DEV) {
-  worker.start({
-    onUnhandledRequest: 'bypass',
-  })
+async function prepare() {
+  if (import.meta.env.DEV) {
+    await worker.start({
+      onUnhandledRequest: 'bypass',
+    })
+  }
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+prepare().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+})
