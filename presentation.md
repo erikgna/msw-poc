@@ -97,11 +97,6 @@ Every request passes through it **before** hitting the network.
 > Speaker notes:
 > Focus on positioning: “between the app and the network”.
 
----
-
-## Slide 7 — Real HTTP, Not Fake Objects
-**(~30s)**
-
 MSW uses **standard Request and Response objects**.
 
 - Browser processes them normally
@@ -146,14 +141,6 @@ MSW intercepts **the runtime**, not the library.
 - Refactor data-fetching without touching tests
 - Same mocks for dev, test, and CI
 - Safe “dry-run” of the application
-
-> Speaker notes:
-> This is the payoff slide. Slow down slightly here.
-
----
-
-## Slide 10 — Trade-offs & Closing
-**(~30s)**
 
 - Slightly higher setup cost
 - Much lower long-term maintenance
