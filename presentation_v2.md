@@ -8,7 +8,9 @@ In traditional testing, we rely on Implementation Coupling. When we use jest.moc
 
 **False Positives:** Tests pass because the mock is "satisfied," but the app is broken because the real API contract changed.
 
-**Maintenance Hell:** We spend more time updating mocks than writing features.We need to stop testing code and start testing contracts.
+**Maintenance Hell:** We spend more time updating mocks than writing features.
+
+We need to stop testing code and start testing contracts.
 
 ## Slide 2 — How it Works: The Architecture
 
