@@ -1,70 +1,74 @@
 ## Slide 1 — The Problem: The Mocking Debt
 
-In traditional testing, we rely on Implementation Coupling. When we use jest, we are not testing if our UI works; we are testing if our UI calls a specific library in a specific way.
+Traditional testing relies on implementation coupling.
+When we use Jest mocks, we’re not testing behavior — we’re testing how our UI calls a specific library.
 
-### So, our pain points are that:
+### Our pain points:
 
-1. A simple refactor from Axios to Fetch breaks the entire suite.
-2. Tests pass because the mock is "satisfied," but the app is broken because the real API contract changed.
-3. We spend more time updating mocks than writing features.
+1. Refactoring from Axios to Fetch breaks the entire test suite.
+2. Tests pass because mocks are “satisfied,” while the real API contract is broken.
+3. We spend more time maintaining mocks than shipping features.
 
-We need to stop testing code and start testing contracts.
+We need to stop testing implementations and start testing contracts.
 
 ## Slide 2 — How it Works: The Architecture
 
-MSW works by trating your application as a Black Box, intercepting requests at the lowest possible level.
+MSW treats your application as a black box, intercepting requests at the lowest possible level.
 
-**The Browser: Service Workers**
+### The Browser — Service Workers
 
-In the browser, MSW registers a Service Worker. This is a proxy script that runs in a background thread, sitting between your app and the internet. When your app calls fetch(), the Service Worker intercepts the event. It doesn't "fake" the call; it captures the real request, matches it to a handler, and returns a standard Response object. The app never knows the request didn't hit a real server.
+MSW registers a Service Worker that runs between your app and the network.
+When fetch() is called, the Service Worker intercepts the request, matches a handler, and returns a real Response object.
+From the app’s perspective, the request behaves exactly like a real network call.
 
-**Node.js: Monkey Patching & Interceptors**
+### Node.js — Low-Level Interceptors
 
-Node.js lacks Service Workers, so MSW uses Monkey Patching via @mswjs/interceptors. It hooks into the low-level http and https modules at the socket level. Whether you use Axios, Got, or Superagent, they all eventually call these core modules. MSW intercepts them at the runtime source, ensuring your tests remain library-agnostic.
+Node doesn’t support Service Workers, so MSW hooks into the core http and https modules via @mswjs/interceptors.
+Since all HTTP libraries eventually use these modules, MSW stays library-agnostic and intercepts requests at the runtime level.
 
 ## Slide 3 — The Evolution: Stateful Mocks
 
-Basic mocking is static, it gets us there, but it’s manual. MSW evolves by adding stateful mock:
+Static mocks work, but they’re limited. MSW enables stateful mocking:
 
-1. Instead of hardcoded JSON, we use an in-memory database. If you POST a new user, the next GET request actually returns that new user.
-
-2. We use the actual Request and Response classes. You can access headers, cookies, and query parameters to drive conditional logic.
-
-3. Your mocks can verify that an Auth header exists, returning an error if it’s missing, exactly like a real backend.
+1. An in-memory database replaces hardcoded JSON — a POST actually affects the next GET.
+2. Handlers use real Request and Response objects, including headers, cookies, and query params.
+3. Mocks can enforce behavior, like requiring auth headers and returning real error responses.
 
 ## Slide 4 — Chaos & Resilience
 
-To reach the highest level of confidence, we must test the "Bad Days." MSW allows us to simulate these network conditions:
+Real confidence comes from testing failure scenarios.
 
-1. Randomly trigger 500 Server Errors or 429 Too Many Requests to verify your error boundaries.
+With MSW, we can:
 
-2. Inject a 3-second delay to test loading skeletons and prevent UI flickering.
-
-3. You can resolve "Request B" before "Request A" to ensure your UI handles out-of-order data correctly—solving the most elusive bugs in frontend development.
+1. Randomly trigger 500s or 429s to validate error handling.
+2. Add artificial delays to test loading states and prevent UI flicker.
+3. Resolve requests out of order to catch race conditions — one of the hardest frontend bugs to find.
 
 ## Slide 5 — Efficiency: Record and Replay
 
-We can further accelerate development by removing manual writing mocks.
+MSW can also eliminate manual mock writing.
 
-1. By running your app against a live staging environment, MSW records every outgoing request and incoming response.
+1. Run your app against a real environment and record requests and responses.
+2. MSW generates handlers directly from real traffic.
 
-2. It generates the mock code for you. This ensures your mocks are a 1-to-1 reflection of your real API, turning "mock maintenance" into a simple "re-record" task.
+This turns mock maintenance into a simple re-record, not a rewrite.
 
 ## Slide 6 — Comparison: The Competitive Landscape
 
-Why choose MSW?
+### Why MSW?
 
-- MirageJS intercepts the browser XMLHttpRequest, it's browser only, it's not library agnostic and it's implemented as global mock which can leak into app logic.
-- Nock intercepts at Node http level, it's node only, it's library agnostic but it's implenetation relies on heavy patching of core Node's API's.
+1. MirageJS: browser-only, tied to XMLHttpRequest, implemented as a global mock.
+2. Nock: Node-only, library-agnostic, but relies on heavy patching of Node’s core APIs.
 
-In the other hand, MSW uses service worker and sockets, supports both node and browser, it's library agnostic since works at network level and it's implemented as a standard web proxy.
+### MSW, by contrast:
+
+1. Works in both browser and Node
+2. Is fully library-agnostic
+3. Intercepts at the network level
+4. Acts like a standard web proxy
 
 ## Slide 7 — The Benefit: Total Confidence
 
-1. Build entire features before the backend API even exists.
-
-2. Change your entire data-fetching library without touching a single test file.
-
-3. Your handlers become a clear, executable contract of how your system behaves.
-
-Stop mocking the code. Start simulating the world. That is how you gain 100% confidence in your software’s behavior.
+1. Build features before the backend exists.
+2. Swap your data-fetching library without changing tests.
+3. Use handlers as executable, living API contracts.
