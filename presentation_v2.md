@@ -27,7 +27,9 @@ Node.js lacks Service Workers, so MSW uses Monkey Patching via @mswjs/intercepto
 Basic mocking is static, it gets you there, but it’s manual. MSW evolves by adding Intelligence:
 
 **Stateful Mocks:** Instead of hardcoded JSON, we use an in-memory database. If you POST a new user, the next GET request actually returns that new user.
+
 **Standard Web APIs:** We use the actual Request and Response classes. You can access headers, cookies, and query parameters (e.g., ?sort=desc) to drive conditional logic.
+
 **Logic-Based Responses:** Your mocks can verify that an Auth header exists, returning a 403 if it’s missing, exactly like a real backend.
 
 ## Slide 4 — Chaos & Resilience
@@ -35,7 +37,9 @@ Basic mocking is static, it gets you there, but it’s manual. MSW evolves by ad
 To reach the highest level of confidence, we must test the "Bad Days." MSW allows us to simulate network conditions that are nearly impossible to trigger with traditional mocks:
 
 **Chaos Injection:** Randomly trigger 500 Server Errors or 429 Too Many Requests to verify your error boundaries.
+
 **Simulated Latency:** Inject a 3-second delay to test loading skeletons and prevent UI flickering.
+
 **Race Conditions:** You can resolve "Request B" before "Request A" to ensure your UI handles out-of-order data correctly—solving the most elusive bugs in frontend development.
 
 ## Slide 5 — Efficiency: Record and Replay
@@ -43,6 +47,7 @@ To reach the highest level of confidence, we must test the "Bad Days." MSW allow
 We can further accelerate development by removing the manual labor of writing mocks.
 
 **The Recorder:** MSW can act as an eavesdropper. By running your app against a live staging environment, MSW records every outgoing request and incoming response.
+
 **Automated Handlers:** It generates the mock code for you. This ensures your mocks are a 1-to-1 reflection of your real API, turning "mock maintenance" into a simple "re-record" task.
 
 ## Slide 6 — Comparison: The Competitive Landscape
@@ -61,7 +66,9 @@ While Nock is great for Node-only tests, MSW provides a single source of truth f
 MSW is not just a tool; it is a Sales Tool for your team’s productivity.
 
 **Frontend First:** Build entire features before the backend API even exists.
+
 **Refactor Safe:** Change your entire data-fetching library without touching a single test file.
+
 **Living Documentation:** Your handlers become a clear, executable contract of how your system behaves.
 
 Stop mocking the code. Start simulating the world. That is how you gain 100% confidence in your software’s behavior.
